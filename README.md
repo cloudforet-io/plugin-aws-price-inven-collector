@@ -11,9 +11,9 @@ Plugin for AWS Price info
 "data": {
 	"service_code": "AmazonEC22",
 	"region_name": "ap-northeast-2"
-    "product_family": "Compute Instance",
-    "sku": "22PQKJ49ZN4WMT4U",
-    "attributes": {
+	"product_family": "Compute Instance",
+	"sku": "22PQKJ49ZN4WMT4U",
+	"attributes": {
         "enhancedNetworkingSupported": "Yes", 
         "intelTurboAvailable": "No", 
         "memory": "976 GiB", 
