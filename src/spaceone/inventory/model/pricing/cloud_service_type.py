@@ -17,7 +17,27 @@ cst_price._metadata = CloudServiceTypeMeta.set_meta(
         TextDyField.data_source('Region', 'data.region_name'),
         TextDyField.data_source('SKU', 'data.sku'),
     ],
-    search=[]
+    search=[
+        SearchField.set(name='Service Code', key='data.service_code'),
+        SearchField.set(name='Region', key='data.region_name'),
+        SearchField.set(name='Product Family', key='data.product_family'),
+        SearchField.set(name='SKU', key='data.sku'),
+        SearchField.set(name='Physical Processor', key='data.attributes.physicalProcessor'),
+        SearchField.set(name='Processor Features', key='data.attributes.processorFeatures'),
+        SearchField.set(name='Instance Type', key='data.attributes.instanceType'),
+        SearchField.set(name='Instance Family', key='data.attributes.instanceFamily'),
+        SearchField.set(name='Operating System', key='data.attributes.operatingSystem'),
+        SearchField.set(name='vcpu', key='data.attributes.vcpu', data_type='integer'),
+        SearchField.set(name='memory', key='data.attributes.memory', data_type='integer'),
+        SearchField.set(name='gpu', key='data.attributes.gpu', data_type='integer'),
+        SearchField.set(name='EC2 Storage Type', key='data.attributes.storageType'),
+        SearchField.set(name='EC2 Storage Size', key='data.attributes.storageSize', data_type='integer'),
+        SearchField.set(name='EC2 Storage Count', key='data.attributes.storageCount', data_type='integer'),
+        SearchField.set(name='Dedicated EBS Throughput', key='data.attributes.dedicatedEbsThroughput',
+                        data_type='integer'),
+        SearchField.set(name='Price per Unit (USD)', key='data.terms.price_dimensions.price_per_unit.USD',
+                        data_type='float'),
+    ]
 )
 
 CLOUD_SERVICE_TYPES = [
