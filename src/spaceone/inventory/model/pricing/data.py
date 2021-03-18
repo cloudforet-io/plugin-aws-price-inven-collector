@@ -1,5 +1,6 @@
 from schematics import Model
-from schematics.types import ModelType, ListType, StringType, DictType, IntType, DateTimeType
+from schematics.types import ModelType, ListType, StringType, DictType, IntType, \
+    DateTimeType, FloatType
 
 
 class PriceDimension(Model):
@@ -8,7 +9,7 @@ class PriceDimension(Model):
     begin_range = StringType(serialize_when_none=False, deserialize_from='beginRange')
     description = StringType(serialize_when_none=False)
     end_range = StringType(serialize_when_none=False, deserialize_from='endRange')
-    price_per_unit = DictType(StringType, deserialize_from='pricePerUnit')
+    price_per_unit = DictType(FloatType, deserialize_from='pricePerUnit')
     rate_code = StringType(serialize_when_none=False, deserialize_from='rateCode')
     unit = StringType(serialize_when_none=False)
 
