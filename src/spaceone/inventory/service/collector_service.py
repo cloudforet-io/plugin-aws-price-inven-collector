@@ -139,8 +139,10 @@ class CollectorService(BaseService):
                 'price_dimension_code': self.get_price_dimension_code(price_dimension.get('rateCode'))
             })
 
-            if price_per_unit := self.convert_price_per_unit(price_dimension.get('pricePerUnit')):
-                price_dimension.update({'pricePerUnit': {'USD': price_per_unit}})
+            price_per_unit = price_dimension.get('pricePerUnit', {})
+
+            for unit, price in price_per_unit.items():
+                price_per_unit[unit] = float(price)
 
             dimensions.append(price_dimension)
 
@@ -296,10 +298,3 @@ class CollectorService(BaseService):
             return int(throughput_value_only)
         else:
             return None
-
-    @staticmethod
-    def convert_price_per_unit(price_per_unit):
-        if price_per_unit:
-            if usd := price_per_unit.get('USD'):
-                return float(usd)
-        return None
