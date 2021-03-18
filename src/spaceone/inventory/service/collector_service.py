@@ -1,5 +1,6 @@
 import time
 import logging
+import re
 import concurrent.futures
 
 from spaceone.core.service import *
@@ -72,21 +73,27 @@ class CollectorService(BaseService):
                 future_executors.append(executor.submit(self.set_product, pricing_mgr, service_code))
 
             for future in concurrent.futures.as_completed(future_executors):
-                for resource in future.result():
-                    yield resource.to_primitive()
+                try:
+                    for resource in future.result():
+                        yield resource.to_primitive()
+                except Exception as e:
+                    _LOGGER.error(f'failed to result {e}')
 
         print(f'TOTAL TIME : {time.time() - start_time} Seconds')
 
     def set_product(self, pricing_mgr, service_code):
         # print(f'--- START @@@ {service_code} @@@')
         for product in pricing_mgr.list_products(service_code):
+            # print(product.get('product', {}).get('sku'))
+
             try:
                 product_dic = {
                     'service_code': product.get('serviceCode'),
                     'region_name': self.get_region_name_from_location(product.get('product', {}).get('attributes', {}).get('location', '')),
                     'product_family': product.get('product', {}).get('productFamily'),
                     'sku': product.get('product', {}).get('sku'),
-                    'attributes': product.get('product', {}).get('attributes'),
+                    # 'attributes': product.get('product', {}).get('attributes'),
+                    'attributes': self.set_product_attributes(product.get('product', {}).get('attributes')),
                     'publication_date': product.get('publicationDate'),
                     'version': product.get('version'),
                     'terms': self.get_terms(product.get('terms', {}))
@@ -132,9 +139,57 @@ class CollectorService(BaseService):
                 'price_dimension_code': self.get_price_dimension_code(price_dimension.get('rateCode'))
             })
 
+            if price_per_unit := self.convert_price_per_unit(price_dimension.get('pricePerUnit')):
+                price_dimension.update({'pricePerUnit': {'USD': price_per_unit}})
+
             dimensions.append(price_dimension)
 
         return dimensions
+
+    def set_product_attributes(self, attributes):
+        if attributes is None:
+            return None
+
+        if 'dedicatedEbsThroughput' in attributes:
+            try:
+                if throughput := self.convert_throughput_attribute(attributes.get('dedicatedEbsThroughput')):
+                    attributes.update({'dedicatedEbsThroughput': throughput})
+            except Exception as e:
+                pass
+
+        if 'vcpu' in attributes:
+            try:
+                if vcpu := self.convert_vcpu_attribute(attributes.get('vcpu')):
+                    attributes.update({'vcpu': vcpu})
+            except Exception as e:
+                pass
+
+        if 'gpu' in attributes:
+            try:
+                if gpu := self.convert_gpu_attribute(attributes.get('gpu')):
+                    attributes.update({'gpu': gpu})
+            except Exception as e:
+                pass
+
+        if 'memory' in attributes:
+            try:
+                if memory := self.convert_memory_attribute(attributes.get('memory')):
+                    attributes.update({'memory': memory})
+            except Exception as e:
+                pass
+
+        if 'storage' in attributes:
+            try:
+                if storage_info := self.convert_storage_attribute(attributes.get('storage')):
+                    attributes.update({
+                        'storageType': storage_info.get('storage_type'),
+                        'stroageSize': storage_info.get('storage_size'),
+                        'sotrageCount': storage_info.get('storage_count'),
+                    })
+            except Exception as e:
+                pass
+
+        return attributes
 
     @staticmethod
     def get_region_name_from_location(location):
@@ -176,3 +231,75 @@ class CollectorService(BaseService):
             return rate_code.split('.')[-1]
         else:
             return ''
+
+    @staticmethod
+    def convert_vcpu_attribute(vcpu):
+        if vcpu:
+            return int(vcpu.strip())
+        else:
+            return None
+
+    @staticmethod
+    def convert_gpu_attribute(gpu):
+        if gpu:
+            return int(gpu.strip())
+        else:
+            return None
+
+    @staticmethod
+    def convert_memory_attribute(memory):
+        if memory:
+            return int(re.sub(' GiB', '', memory).strip())
+        else:
+            return None
+
+    @staticmethod
+    def convert_storage_attribute(storage):
+        storage_size = 0
+        storage_count = 0
+
+        if storage:
+            if 'EBS' in storage:
+                return {
+                    'storage_type': 'EBS',
+                    'storage_size': storage_size,
+                    'storage_count': storage_count
+                }
+            elif 'SSD' in storage:
+                # pattern 1 : "2 x 150 SSD"
+                # pattern 2 : "4 x 300 NVMe SSD"
+                # pattern 3 : "1200 GB NVMe SSD"
+
+                storage_split = re.split(' ', storage)
+                if storage_split[1] == 'x':
+                    storage_size = int(storage_split[2])
+                    storage_count = int(storage_split[0])
+                else:
+                    storage_size = int(storage_split[0])
+                    storage_count = 1
+
+                return {
+                    'storage_type': 'SSD',
+                    'storage_size': storage_size,
+                    'storage_count': storage_count
+                }
+        else:
+            return None
+
+    @staticmethod
+    def convert_throughput_attribute(throughput):
+        # pattern 1 : "Up to 2120 Mbps"
+        # pattern 2 : "2000 Mbps"
+        if throughput:
+            remove_mbps = re.sub(' Mbps', '', throughput)
+            throughput_value_only = re.sub('Up to ', '', remove_mbps)
+            return int(throughput_value_only)
+        else:
+            return None
+
+    @staticmethod
+    def convert_price_per_unit(price_per_unit):
+        if price_per_unit:
+            if usd := price_per_unit.get('USD'):
+                return float(usd)
+        return None
