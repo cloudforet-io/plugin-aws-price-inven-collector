@@ -100,7 +100,8 @@ class CollectorService(BaseService):
                 }
 
                 product_data = Product(product_dic, strict=False)
-                proudct_resource = ProductResource({
+
+                product_resource = ProductResource({
                     'data': product_data,
                     'region_code': product_dic['region_name'],
                     'reference': ReferenceModel(product_data.reference())
@@ -109,7 +110,7 @@ class CollectorService(BaseService):
                 # print(f'##### {product_data.get("service_code")}: {product_data.get("sku")}')
 
                 yield ProductResponse({
-                    'resource': proudct_resource
+                    'resource': product_resource
                 })
 
             except Exception as e:
@@ -185,8 +186,8 @@ class CollectorService(BaseService):
                 if storage_info := self.convert_storage_attribute(attributes.get('storage')):
                     attributes.update({
                         'storageType': storage_info.get('storage_type'),
-                        'stroageSize': storage_info.get('storage_size'),
-                        'sotrageCount': storage_info.get('storage_count'),
+                        'storageSize': storage_info.get('storage_size'),
+                        'storageCount': storage_info.get('storage_count'),
                     })
             except Exception as e:
                 pass
@@ -245,13 +246,16 @@ class CollectorService(BaseService):
     def convert_gpu_attribute(gpu):
         if gpu:
             return int(gpu.strip())
+        elif '0' in gpu:
+            return 0
         else:
             return None
 
     @staticmethod
     def convert_memory_attribute(memory):
         if memory:
-            return int(re.sub(' GiB', '', memory).strip())
+            memory_str = float(re.sub(r"\s+", "", memory, flags=re.UNICODE).replace("GiB", ""))
+            return int(memory_str)
         else:
             return None
 
