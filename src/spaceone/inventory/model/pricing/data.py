@@ -1,6 +1,5 @@
 from schematics import Model
-from schematics.types import ModelType, ListType, StringType, DictType, IntType, \
-    DateTimeType, FloatType
+from schematics.types import ModelType, ListType, StringType, DictType, DateTimeType, FloatType, UnionType, IntType
 
 
 class PriceDimension(Model):
@@ -21,12 +20,13 @@ class Terms(Model):
     price_dimensions = ListType(ModelType(PriceDimension), default=[])
     term_attributes = DictType(StringType)
 
+
 class Product(Model):
     service_code = StringType()
     region_name = StringType()
     product_family = StringType()
     sku = StringType()
-    attributes = DictType(StringType)
+    attributes = DictType(UnionType([IntType(), StringType()]))
     publication_date = DateTimeType(serialize_when_none=False)
     version = StringType()
     terms = ListType(ModelType(Terms), default=[])
