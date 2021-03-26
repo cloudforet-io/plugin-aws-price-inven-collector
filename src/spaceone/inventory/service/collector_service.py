@@ -1,14 +1,14 @@
-import time
+import concurrent.futures
 import logging
 import re
-import concurrent.futures
+import time
 
 from spaceone.core.service import *
+
 from spaceone.inventory.libs.schema.base import ReferenceModel
 from spaceone.inventory.manager.pricing_manager import PricingManager
-from spaceone.inventory.model.pricing.data import Product
 from spaceone.inventory.model.pricing.cloud_service import ProductResource, ProductResponse
-
+from spaceone.inventory.model.pricing.data import Product
 
 _LOGGER = logging.getLogger(__name__)
 MAX_WORKER = 20
@@ -89,7 +89,8 @@ class CollectorService(BaseService):
             try:
                 product_dic = {
                     'service_code': product.get('serviceCode'),
-                    'region_name': self.get_region_name_from_location(product.get('product', {}).get('attributes', {}).get('location', '')),
+                    'region_name': self.get_region_name_from_location(
+                        product.get('product', {}).get('attributes', {}).get('location', '')),
                     'product_family': product.get('product', {}).get('productFamily'),
                     'sku': product.get('product', {}).get('sku'),
                     # 'attributes': product.get('product', {}).get('attributes'),
@@ -98,7 +99,6 @@ class CollectorService(BaseService):
                     'version': product.get('version'),
                     'terms': self.get_terms(product.get('terms', {}))
                 }
-
                 product_data = Product(product_dic, strict=False)
 
                 product_resource = ProductResource({
@@ -178,6 +178,7 @@ class CollectorService(BaseService):
             try:
                 if memory := self.convert_memory_attribute(attributes.get('memory')):
                     attributes.update({'memory': memory})
+                    # print(f"memory {type(memory)} : {attributes.get('memory', '')} -> {memory}")
             except Exception as e:
                 pass
 
@@ -254,8 +255,7 @@ class CollectorService(BaseService):
     @staticmethod
     def convert_memory_attribute(memory):
         if memory:
-            memory_str = float(re.sub(r"\s+", "", memory, flags=re.UNICODE).replace("GiB", ""))
-            return int(memory_str)
+            return float(re.sub(r"\s+", "", memory, flags=re.UNICODE).replace("GiB", ""))
         else:
             return None
 
