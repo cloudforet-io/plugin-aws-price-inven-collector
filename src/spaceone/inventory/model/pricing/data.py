@@ -26,7 +26,7 @@ class Product(Model):
     region_name = StringType()
     product_family = StringType()
     sku = StringType()
-    attributes = DictType(UnionType([IntType(), StringType()]))
+    attributes = DictType(UnionType([IntType(), StringType(), FloatType()]))
     publication_date = DateTimeType(serialize_when_none=False)
     version = StringType()
     terms = ListType(ModelType(Terms), default=[])
